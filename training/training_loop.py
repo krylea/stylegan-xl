@@ -28,6 +28,9 @@ from torch_utils.ops import grid_sample_gradfix
 import legacy
 from metrics import metric_main
 
+
+STEP_INTERVAL=1000
+
 #----------------------------------------------------------------------------
 
 def setup_snapshot_image_grid(training_set, random_seed=0, gw=None, gh=None):
@@ -143,7 +146,7 @@ def training_loop(
     conv2d_gradfix.enabled = True                       # Improves training speed.
     grid_sample_gradfix.enabled = True                  # Avoids errors with the augmentation pipe.
     __RESTART__ = torch.tensor(0., device=device)       # will be broadcasted to exit loop
-    __CUR_NIMG__ = torch.tensor(resume_kimg * 1000, dtype=torch.long, device=device)
+    __CUR_NIMG__ = torch.tensor(resume_kimg * STEP_INTERVAL, dtype=torch.long, device=device)
     __CUR_TICK__ = torch.tensor(0, dtype=torch.long, device=device)
     __BATCH_IDX__ = torch.tensor(0, dtype=torch.long, device=device)
     __AUGMENT_P__ = torch.tensor(augment_p, dtype=torch.float, device=device)
@@ -302,7 +305,7 @@ def training_loop(
     maintenance_time = tick_start_time - start_time
     batch_idx = __BATCH_IDX__.item()
     if progress_fn is not None:
-        progress_fn(cur_nimg // 1000, total_kimg)
+        progress_fn(cur_nimg // STEP_INTERVAL, total_kimg)
     augment_p = __AUGMENT_P__
     if augment_pipe is not None:
         augment_pipe.p.copy_(augment_p)
@@ -359,7 +362,7 @@ def training_loop(
 
         # Update G_ema.
         with torch.autograd.profiler.record_function('Gema'):
-            ema_nimg = ema_kimg * 1000
+            ema_nimg = ema_kimg * STEP_INTERVAL
             if ema_rampup is not None:
                 ema_nimg = min(ema_nimg, cur_nimg * ema_rampup)
             ema_beta = 0.5 ** (batch_size / max(ema_nimg, 1e-8))
@@ -375,22 +378,22 @@ def training_loop(
         # Execute ADA heuristic.
         if (ada_stats is not None) and (batch_idx % ada_interval == 0):
             ada_stats.update()
-            adjust = np.sign(ada_stats['Loss/signs/real'] - ada_target) * (batch_size * ada_interval) / (ada_kimg * 1000)
+            adjust = np.sign(ada_stats['Loss/signs/real'] - ada_target) * (batch_size * ada_interval) / (ada_kimg * STEP_INTERVAL)
             augment_pipe.p.copy_((augment_pipe.p + adjust).max(misc.constant(0, device=device)))
 
         # Perform maintenance tasks once per tick.
-        done = (cur_nimg >= total_kimg * 1000)
-        if (not done) and (cur_tick != 0) and (cur_nimg < tick_start_nimg + kimg_per_tick * 1000):
+        done = (cur_nimg >= total_kimg * STEP_INTERVAL)
+        if (not done) and (cur_tick != 0) and (cur_nimg < tick_start_nimg + kimg_per_tick * STEP_INTERVAL):
             continue
 
         # Print status line, accumulating the same information in training_stats.
         tick_end_time = time.time()
         fields = []
         fields += [f"tick {training_stats.report0('Progress/tick', cur_tick):<5d}"]
-        fields += [f"kimg {training_stats.report0('Progress/kimg', cur_nimg / 1e3):<8.1f}"]
+        fields += [f"kimg {training_stats.report0('Progress/kimg', cur_nimg / STEP_INTERVAL):<8.1f}"]
         fields += [f"time {dnnlib.util.format_time(training_stats.report0('Timing/total_sec', tick_end_time - start_time)):<12s}"]
         fields += [f"sec/tick {training_stats.report0('Timing/sec_per_tick', tick_end_time - tick_start_time):<7.1f}"]
-        fields += [f"sec/kimg {training_stats.report0('Timing/sec_per_kimg', (tick_end_time - tick_start_time) / (cur_nimg - tick_start_nimg) * 1e3):<7.2f}"]
+        fields += [f"sec/kimg {training_stats.report0('Timing/sec_per_kimg', (tick_end_time - tick_start_time) / (cur_nimg - tick_start_nimg) * STEP_INTERVAL):<7.2f}"]
         fields += [f"maintenance {training_stats.report0('Timing/maintenance_sec', maintenance_time):<6.1f}"]
         fields += [f"cpumem {training_stats.report0('Resources/cpu_mem_gb', psutil.Process(os.getpid()).memory_info().rss / 2**30):<6.2f}"]
         fields += [f"gpumem {training_stats.report0('Resources/peak_gpu_mem_gb', torch.cuda.max_memory_allocated(device) / 2**30):<6.2f}"]
@@ -424,7 +427,7 @@ def training_loop(
         # Save image snapshot.
         if (rank == 0) and (image_snapshot_ticks is not None) and (done or cur_tick % image_snapshot_ticks == 0):
             images = torch.cat([G_ema(z=z, c=c, noise_mode='const').cpu() for z, c in zip(grid_z, grid_c)]).numpy()
-            save_image_grid(images, os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}.png'), drange=[-1,1], grid_size=grid_size)
+            save_image_grid(images, os.path.join(run_dir, f'fakes{cur_nimg//STEP_INTERVAL:06d}.png'), drange=[-1,1], grid_size=grid_size)
 
         # Save network snapshot.
         snapshot_pkl = None
@@ -444,7 +447,7 @@ def training_loop(
 
             # save for current time step (only for superres training, as we do not evaluate metrics here)
             if False:
-                snapshot_pkl = os.path.join(run_dir, f'network-snapshot-{cur_nimg//1000:06d}.pkl')
+                snapshot_pkl = os.path.join(run_dir, f'network-snapshot-{cur_nimg//STEP_INTERVAL:06d}.pkl')
                 if rank == 0:
                     with open(snapshot_pkl, 'wb') as f:
                         dill.dump(snapshot_data, f)
@@ -513,7 +516,7 @@ def training_loop(
             stats_jsonl.write(json.dumps(fields) + '\n')
             stats_jsonl.flush()
         if stats_tfevents is not None:
-            global_step = int(cur_nimg / 1e3)
+            global_step = int(cur_nimg / STEP_INTERVAL)
             walltime = timestamp - start_time
             for name, value in stats_dict.items():
                 stats_tfevents.add_scalar(name, value.mean, global_step=global_step, walltime=walltime)
@@ -521,7 +524,7 @@ def training_loop(
                 stats_tfevents.add_scalar(f'Metrics/{name}', value, global_step=global_step, walltime=walltime)
             stats_tfevents.flush()
         if progress_fn is not None:
-            progress_fn(cur_nimg // 1000, total_kimg)
+            progress_fn(cur_nimg // STEP_INTERVAL, total_kimg)
 
         # Update state.
         cur_tick += 1
