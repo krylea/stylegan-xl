@@ -3,13 +3,16 @@
 #SBATCH --output=logs/slurm-%j.txt
 #SBATCH --open-mode=append
 #SBATCH --ntasks=1
-#SBATCH --gres=gpu:1
-#SBATCH --partition=t4v2,rtx6000
+#SBATCH --gres=gpu:4
+#SBATCH --partition=a40
 #SBATCH --cpus-per-gpu=1
 #SBATCH --mem=50GB
 
+BATCH_PER_GPU=16
+
 
 python train.py --outdir=./training-runs/pokemon --cfg=stylegan3-t --data=./data/pokemon16.zip \
-    --gpus=8 --batch=64 --mirror=1 --snap 10 --batch-gpu 8 --kimg 10000 --syn_layers 10
+    --gpus=$SBATCH_GPUS --batch=$BATCH_PER_GPU * $SBATCH_GPUS --mirror=1 --snap 10 --batch-gpu $BATCH_PER_GPU \
+     --kimg 10000 --cbase 16384 --cmax 256 --syn_layers 7
 
 
