@@ -13,6 +13,6 @@ BATCH_PER_GPU=16
 
 python train.py --outdir=./training-runs/pokemon --cfg=stylegan3-t --data=./data/pokemon16.zip \
     --gpus=$SBATCH_GPUS --batch=$BATCH_PER_GPU * $SBATCH_GPUS --mirror=1 --snap 10 --batch-gpu $BATCH_PER_GPU \
-     --kimg 10000 --cbase 16384 --cmax 256 --syn_layers 7
+     --kimg 10000 --cbase 16384 --cmax 256 --syn_layers 7 --worker $SBATCH_CPUS_PER_GPU * $SBATCH_GPUS
 
 
