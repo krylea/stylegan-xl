@@ -426,7 +426,10 @@ def convert_dataset(
         archive_fname = f'{idx_str[:5]}/img{idx_str}.png'
 
         # Apply crop and resize.
-        img = transform_image(image['img'])
+        try:
+            img = transform_image(image['img'])
+        except:
+            img = None
 
         # Transform may drop images.
         if img is None:
