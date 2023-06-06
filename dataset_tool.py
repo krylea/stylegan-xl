@@ -429,6 +429,7 @@ def convert_dataset(
         try:
             img = transform_image(image['img'])
         except:
+            print("Image %d failed." % idx)
             img = None
 
         # Transform may drop images.
