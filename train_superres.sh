@@ -21,12 +21,12 @@ CPUS=$((SLURM_CPUS_PER_GPU * SLURM_GPUS_ON_NODE))
 DONE=0
 while [ $DONE -eq 0 ]
 do
+    DONE=1
     python train.py --outdir=./training-runs/pokemon --cfg=stylegan3-t --data=./data/pokemon$RES.zip \
         --gpus=$SLURM_GPUS_ON_NODE --batch=$BATCH --mirror=1 --snap 10 \
         --batch-gpu $BATCH_PER_GPU --kimg 10000 --syn_layers 7 --workers $CPUS \
         --superres --up_factor 2 --head_layers 4 --cbase 16384 --cmax 256 --restart_every 36000 \
-        --path_stem training-runs/pokemon/$PREFIX-stylegan3-t-pokemon$PREV_RES-gpus$GPUS-batch$BATCH/best_model.pkl
-    DONE=1
+        --path_stem training-runs/pokemon/$PREFIX-stylegan3-t-pokemon$PREV_RES-gpus$GPUS-batch$BATCH/best_model.pkl 
     if [[ $? -eq 3 ]]
     then
         DONE=0
