@@ -17,7 +17,7 @@ GPUS=$SLURM_GPUS_ON_NODE
 CPUS=$((SLURM_CPUS_PER_GPU * SLURM_GPUS_ON_NODE))
 
 python train.py --outdir=./training-runs/pokemon --cfg=stylegan3-t --data=./data/pokemon$RES.zip \
-    --gpus=$GPU --batch=$BATCH --mirror=1 --snap 10 --batch-gpu $BATCH_PER_GPU \
+    --gpus=$GPUS --batch=$BATCH --mirror=1 --snap 10 --batch-gpu $BATCH_PER_GPU \
      --kimg 10000 --cbase 16384 --cmax 256 --syn_layers 7 --workers $CPUS
 
 
