@@ -96,10 +96,10 @@ class SafeDataset(torch.utils.data.Dataset):
             idx += 1
         raise IndexError
     
-    def __get_state__(self):
+    def __getstate__(self):
         return self.__dict__.copy()
 
-    def __set_state__(self, state):
+    def __setstate__(self, state):
         self.dataset = state['dataset']
         for k, v in state.items():
             if k != 'dataset':
