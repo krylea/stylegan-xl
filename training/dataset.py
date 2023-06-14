@@ -334,8 +334,8 @@ class ImageFolderDatasetWithPreprocessing(Dataset):
         self._path = path
         self._zipfile = None
         
+        self.resolution
         self.dataset_attrs=None
-        self.transform = make_transform("center-crop", resolution, resolution)
 
         if os.path.isdir(self._path):
             self._type = 'dir'
@@ -402,8 +402,10 @@ class ImageFolderDatasetWithPreprocessing(Dataset):
     def _preprocess(self, image, idx):
         idx_str = f'{idx:08d}'
         archive_fname = f'{idx_str[:5]}/img{idx_str}.png'
+
+        transform = make_transform("center-crop", self.resolution, self.resolution)
         try:
-            img = self.transform(image)
+            img = transform(image)
         except:
             raise Exception("Image %d failed." % idx)
             
