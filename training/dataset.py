@@ -250,3 +250,198 @@ class ImageFolderDataset(Dataset):
         return labels
 
 #----------------------------------------------------------------------------
+
+
+import functools
+import gzip
+import io
+import json
+import os
+import pickle
+import re
+import sys
+import tarfile
+import zipfile
+from pathlib import Path
+from typing import Callable, Optional, Tuple, Union
+import imageio
+
+import click
+import numpy as np
+import PIL.Image
+from tqdm import tqdm
+
+def error(msg):
+    print('Error: ' + msg)
+    sys.exit(1)
+
+def make_transform(
+    transform: Optional[str],
+    output_width: Optional[int],
+    output_height: Optional[int]
+) -> Callable[[np.ndarray], Optional[np.ndarray]]:
+    def scale(width, height, img):
+        w = img.shape[1]
+        h = img.shape[0]
+        if width == w and height == h:
+            return img
+        img = PIL.Image.fromarray(img)
+        ww = width if width is not None else w
+        hh = height if height is not None else h
+        img = img.resize((ww, hh), PIL.Image.LANCZOS)
+        return np.array(img)
+
+    def center_crop(width, height, img):
+        crop = np.min(img.shape[:2])
+        img = img[(img.shape[0] - crop) // 2 : (img.shape[0] + crop) // 2, (img.shape[1] - crop) // 2 : (img.shape[1] + crop) // 2]
+        img = PIL.Image.fromarray(img, 'RGB')
+        img = img.resize((width, height), PIL.Image.LANCZOS)
+        return np.array(img)
+
+
+    def center_crop_wide(width, height, img):
+        ch = int(np.round(width * img.shape[0] / img.shape[1]))
+        if img.shape[1] < width or ch < height:
+            return None
+
+        img = img[(img.shape[0] - ch) // 2 : (img.shape[0] + ch) // 2]
+        img = PIL.Image.fromarray(img, 'RGB')
+        img = img.resize((width, height), PIL.Image.LANCZOS)
+        img = np.array(img)
+
+        canvas = np.zeros([width, width, 3], dtype=np.uint8)
+        canvas[(width - height) // 2 : (width + height) // 2, :] = img
+        return canvas
+
+    if transform is None:
+        return functools.partial(scale, output_width, output_height)
+    if transform == 'center-crop':
+        if (output_width is None) or (output_height is None):
+            raise Exception('must specify --resolution=WxH when using ' + transform + 'transform')
+        return functools.partial(center_crop, output_width, output_height)
+    if transform == 'center-crop-wide':
+        if (output_width is None) or (output_height is None):
+            raise Exception('must specify --resolution=WxH when using ' + transform + ' transform')
+        return functools.partial(center_crop_wide, output_width, output_height)
+    assert False, 'unknown transform'
+
+class ImageFolderDatasetWithPreprocessing(Dataset):
+    def __init__(self,
+        path,                   # Path to directory or zip.
+        resolution      = None, # Ensure specific resolution, None = highest available.
+        **super_kwargs,         # Additional arguments for the Dataset base class.
+    ):
+        self._path = path
+        self._zipfile = None
+        
+        self.dataset_attrs=None
+        self.transform = make_transform("center-crop", resolution, resolution)
+
+        if os.path.isdir(self._path):
+            self._type = 'dir'
+            self._all_fnames = {os.path.relpath(os.path.join(root, fname), start=self._path) for root, _dirs, files in os.walk(self._path) for fname in files}
+        elif self._file_ext(self._path) == '.zip':
+            self._type = 'zip'
+            self._all_fnames = set(self._get_zipfile().namelist())
+        else:
+            raise IOError('Path must point to a directory or zip')
+
+        PIL.Image.init()
+        self._image_fnames = sorted(fname for fname in self._all_fnames if self._file_ext(fname) in PIL.Image.EXTENSION)
+        if len(self._image_fnames) == 0:
+            raise IOError('No image files found in the specified path')
+
+        name = os.path.splitext(os.path.basename(self._path))[0]
+        raw_shape = [len(self._image_fnames)] + list(self._load_raw_image(0).shape)
+        #if resolution is not None and (raw_shape[2] != resolution or raw_shape[3] != resolution):
+        #    raise IOError('Image files do not match the specified resolution')
+        super().__init__(name=name, raw_shape=(resolution, resolution), **super_kwargs)
+
+    @staticmethod
+    def _file_ext(fname):
+        return os.path.splitext(fname)[1].lower()
+
+    def _get_zipfile(self):
+        assert self._type == 'zip'
+        if self._zipfile is None:
+            self._zipfile = zipfile.ZipFile(self._path)
+        return self._zipfile
+
+    def _open_file(self, fname):
+        if self._type == 'dir':
+            return open(os.path.join(self._path, fname), 'rb')
+        if self._type == 'zip':
+            return self._get_zipfile().open(fname, 'r')
+        return None
+
+    def close(self):
+        try:
+            if self._zipfile is not None:
+                self._zipfile.close()
+        finally:
+            self._zipfile = None
+
+    def __getstate__(self):
+        return dict(super().__getstate__(), _zipfile=None)
+
+    def _load_raw_image(self, raw_idx):
+        fname = self._image_fnames[raw_idx]
+        with self._open_file(fname) as f:
+            if pyspng is not None and self._file_ext(fname) == '.png':
+                image = pyspng.load(f.read())
+            else:
+                image = np.array(PIL.Image.open(f))
+
+        image = self._preprocess(image, raw_idx)
+
+        if image.ndim == 2:
+            image = image[:, :, np.newaxis] # HW => HWC
+        image = image.transpose(2, 0, 1) # HWC => CHW
+        return image
+    
+    def _preprocess(self, image, idx):
+        idx_str = f'{idx:08d}'
+        archive_fname = f'{idx_str[:5]}/img{idx_str}.png'
+        try:
+            img = self.transform(image)
+        except:
+            raise Exception("Image %d failed." % idx)
+            
+
+        # Error check to require uniform image attributes across
+        # the whole dataset.
+        channels = img.shape[2] if img.ndim == 3 else 1
+        cur_image_attrs = {
+            'width': img.shape[1],
+            'height': img.shape[0],
+            'channels': channels
+        }
+        if self.dataset_attrs is None:
+            self.dataset_attrs = cur_image_attrs
+            width = self.dataset_attrs['width']
+            height = self.dataset_attrs['height']
+            if width != height:
+                raise Exception(f'Image dimensions after scale and crop are required to be square.  Got {width}x{height}')
+            if self.dataset_attrs['channels'] not in [1, 3]:
+                raise Exception('Input images must be stored as RGB or grayscale')
+            if width != 2 ** int(np.floor(np.log2(width))):
+                raise Exception('Image width/height after scale and crop are required to be power-of-two')
+        elif self.dataset_attrs != cur_image_attrs:
+            err = [f'  dataset {k}/cur image {k}: {self.dataset_attrs[k]}/{cur_image_attrs[k]}' for k in self.dataset_attrs.keys()] # pylint: disable=unsubscriptable-object
+            raise Exception(f'Image {archive_fname} attributes must be equal across all images of the dataset.  Got:\n' + '\n'.join(err))
+
+        return img
+    
+    def _load_raw_labels(self):
+        fname = 'dataset.json'
+        if fname not in self._all_fnames:
+            return None
+        with self._open_file(fname) as f:
+            labels = json.load(f)['labels']
+        if labels is None:
+            return None
+        labels = dict(labels)
+        labels = [labels[fname.replace('\\', '/')] for fname in self._image_fnames]
+        labels = np.array(labels)
+        labels = labels.astype({1: np.int64, 2: np.float32}[labels.ndim])
+        return labels
