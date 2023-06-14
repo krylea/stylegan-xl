@@ -265,7 +265,7 @@ def main(**kwargs):
         c.cudnn_benchmark = False
 
     # Description string.
-    desc = f'{opts.cfg:s}-{opts.dataset_name:s}-gpus{c.num_gpus:d}-batch{c.batch_size:d}'
+    desc = f'{opts.cfg:s}-{opts.dataset_name:s}'#-gpus{c.num_gpus:d}-batch{c.batch_size:d}'
     if opts.desc is not None:
         desc += f'-{opts.desc}'
 
