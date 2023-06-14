@@ -334,7 +334,7 @@ class ImageFolderDatasetWithPreprocessing(Dataset):
         self._path = path
         self._zipfile = None
         
-        self.resolution
+        self.resolution = resolution
         self.dataset_attrs=None
 
         if os.path.isdir(self._path):
