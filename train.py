@@ -107,13 +107,14 @@ def launch_training(c, desc, outdir, dry_run):
 
 #----------------------------------------------------------------------------
 
-def init_dataset_kwargs(data):
+def init_dataset_kwargs(data, resolution):
     try:
+        dataset_kwargs = dnnlib.EasyDict(class_name=classname, path=data, use_labels=True, max_size=None, xflip=False)
         if 'imagenet' in data:
-            classname = "training.dataset.ImageFolderDatasetWithPreprocessing"  
+            classname = "training.dataset.ImageFolderDatasetWithPreprocessing"
+            dataset_kwargs.resolution = resolution
         else:
             classname = 'training.dataset.ImageFolderDataset'
-        dataset_kwargs = dnnlib.EasyDict(class_name=classname, path=data, use_labels=True, max_size=None, xflip=False)
         dataset_obj = dnnlib.util.construct_class_by_name(**dataset_kwargs) # Subclass of training.dataset.Dataset.
         dataset_kwargs.resolution = dataset_obj.resolution # Be explicit about resolution.
         dataset_kwargs.use_labels = dataset_obj.has_labels # Be explicit about labels.
@@ -177,6 +178,7 @@ def parse_comma_separated_list(s):
 @click.option('--head_layers',  help='Layers of added superresolution head.', type=click.IntRange(min=1), default=7, show_default=True)
 @click.option('--cls_weight',   help='class guidance weight', type=float, default=0.0, show_default=True)
 @click.option('--up_factor',    help='Up sampling factor of superres head', type=click.IntRange(min=2), default=2, show_default=True)
+@click.option('--resolution',    help='Image resolution', type=click.IntRange(min=1))
 
 def main(**kwargs):
     # Initialize config.
@@ -188,7 +190,7 @@ def main(**kwargs):
     c.data_loader_kwargs = dnnlib.EasyDict(pin_memory=True, prefetch_factor=2)
 
     # Training set.
-    c.training_set_kwargs, dataset_name = init_dataset_kwargs(data=opts.data)
+    c.training_set_kwargs, dataset_name = init_dataset_kwargs(data=opts.data, resolution=opts.resolution)
     if opts.cond and not c.training_set_kwargs.use_labels:
         raise click.ClickException('--cond=True requires labels specified in dataset.json')
     c.training_set_kwargs.use_labels = opts.cond
