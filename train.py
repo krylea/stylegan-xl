@@ -111,7 +111,6 @@ def init_dataset_kwargs(data, resolution):
     try:
         if 'imagenet' in data:
             dataset_kwargs = dnnlib.EasyDict(class_name="training.dataset.ImageFolderDatasetWithPreprocessing", path=data, resolution=resolution, use_labels=True, max_size=None, xflip=False)
-            dataset_kwargs.resolution = resolution
         else:
             dataset_kwargs = dnnlib.EasyDict(class_name="training.dataset.ImageFolderDataset", path=data, use_labels=True, max_size=None, xflip=False)
         dataset_obj = dnnlib.util.construct_class_by_name(**dataset_kwargs) # Subclass of training.dataset.Dataset.
