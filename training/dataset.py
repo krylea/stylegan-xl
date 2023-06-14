@@ -334,7 +334,7 @@ class ImageFolderDatasetWithPreprocessing(Dataset):
         self._path = path
         self._zipfile = None
         
-        self.resolution = resolution
+        self._base_resolution = resolution
         self.dataset_attrs=None
 
         if os.path.isdir(self._path):
@@ -403,7 +403,7 @@ class ImageFolderDatasetWithPreprocessing(Dataset):
         idx_str = f'{idx:08d}'
         archive_fname = f'{idx_str[:5]}/img{idx_str}.png'
 
-        transform = make_transform("center-crop", self.resolution, self.resolution)
+        transform = make_transform("center-crop", self._base_resolution, self._base_resolution)
         try:
             img = transform(image)
         except:
