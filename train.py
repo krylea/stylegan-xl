@@ -177,6 +177,7 @@ def parse_comma_separated_list(s):
 @click.option('--cls_weight',   help='class guidance weight', type=float, default=0.0, show_default=True)
 @click.option('--up_factor',    help='Up sampling factor of superres head', type=click.IntRange(min=2), default=2, show_default=True)
 @click.option('--resolution',    help='Image resolution', type=click.IntRange(min=1))
+@click.option('--dataset_name',    help='Dataset name', type=str)
 
 def main(**kwargs):
     # Initialize config.
@@ -193,6 +194,9 @@ def main(**kwargs):
         raise click.ClickException('--cond=True requires labels specified in dataset.json')
     c.training_set_kwargs.use_labels = opts.cond
     c.training_set_kwargs.xflip = opts.mirror
+
+    if opts.dataset_name is None:
+        opts.dataset_name = dataset_name
 
     # Hyperparameters & settings.
     c.num_gpus = opts.gpus
@@ -261,7 +265,7 @@ def main(**kwargs):
         c.cudnn_benchmark = False
 
     # Description string.
-    desc = f'{opts.cfg:s}-{dataset_name:s}-gpus{c.num_gpus:d}-batch{c.batch_size:d}'
+    desc = f'{opts.cfg:s}-{opts.dataset_name:s}-gpus{c.num_gpus:d}-batch{c.batch_size:d}'
     if opts.desc is not None:
         desc += f'-{opts.desc}'
 

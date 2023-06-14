@@ -16,8 +16,8 @@ BATCH=$((BATCH_PER_GPU * SLURM_GPUS_ON_NODE))
 GPUS=$SLURM_GPUS_ON_NODE
 CPUS=$((SLURM_CPUS_PER_GPU * SLURM_GPUS_ON_NODE))
 
-python train.py --outdir=./training-runs/pokemon --cfg=stylegan3-t --data=./data/pokemon$RES.zip \
+python train.py --outdir=./training-runs/pokemon --cfg=stylegan3-t --data=./data/pokemon$RES.zip --dataset_name pokemon \
     --gpus=$GPUS --batch=$BATCH --mirror=1 --snap 10 --batch-gpu $BATCH_PER_GPU \
-     --kimg 10000 --cbase 16384 --cmax 256 --syn_layers 7 --workers $CPUS
+     --kimg 10000 --cbase 16384 --cmax 256 --syn_layers 7 --workers $CPUS --resolution $RES 
 
 
