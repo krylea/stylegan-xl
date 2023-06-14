@@ -10,11 +10,6 @@ class SafeDataset(torch.utils.data.Dataset):
     samples dynamically.
     """
 
-    def __new__(cls, dataset):
-        obj = object.__new__(cls)
-        obj.dataset = dataset
-        return obj
-
     def __init__(self, dataset, eager_eval=False):
         """Creates a `SafeDataset` wrapper around `dataset`."""
         self.dataset = dataset
@@ -100,6 +95,15 @@ class SafeDataset(torch.utils.data.Dataset):
                 return sample
             idx += 1
         raise IndexError
+    
+    def __get_state__(self):
+        return self.__dict__.copy()
+
+    def __set_state__(self, state):
+        self.dataset = state['dataset']
+        for k, v in state.items():
+            if k != 'dataset':
+                setattr(self, k, v)
 
     def __getattr__(self, key):
         """Delegates to original dataset object if an attribute is not
