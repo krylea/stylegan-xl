@@ -29,7 +29,7 @@ from pg_modules.projector import F_RandomProj
 from pathlib import Path
 import dill
 from torch_utils import gen_utils
-
+import safe_dataset
 #----------------------------------------------------------------------------
 
 class MetricOptions:
@@ -74,7 +74,7 @@ def iterate_random_labels(opts, batch_size):
         while True:
             yield c
     else:
-        dataset = dnnlib.util.construct_class_by_name(**opts.dataset_kwargs)
+        dataset = safe_dataset.SafeDataset(dnnlib.util.construct_class_by_name(**opts.dataset_kwargs))
         while True:
             c = [dataset.get_label(np.random.randint(len(dataset))) for _i in range(batch_size)]
             c = torch.from_numpy(np.stack(c)).pin_memory().to(opts.device)
@@ -247,7 +247,7 @@ def compute_feature_stats_for_dataset(opts, detector_url, detector_kwargs, rel_l
 
     print('Calculating the stats for this dataset the first time\n')
     print(f'Saving them to {cache_file}')
-    dataset = dnnlib.util.construct_class_by_name(**opts.dataset_kwargs)
+    dataset = safe_dataset.SafeDataset(dnnlib.util.construct_class_by_name(**opts.dataset_kwargs))
 
     # Initialize.
     num_items = len(dataset)
