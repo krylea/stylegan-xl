@@ -49,7 +49,6 @@ def subprocess_fn(rank, c, temp_dir):
     training_loop.training_loop(rank=rank, **c)
 
 #----------------------------------------------------------------------------
-
 import os
 import re
 import dnnlib
@@ -81,7 +80,11 @@ def launch_training(c, desc, outdir, dry_run):
         cur_run_id = max(prev_run_ids, default=-1) + 1
         c.run_dir = os.path.join(outdir, f'{cur_run_id:05d}-{new_desc}')
         assert not os.path.exists(c.run_dir)
-
+        
+        # Append 2^(index + 2) to c.run_dir
+        appended_value = 2 ** (cur_run_id + 2)
+        c.run_dir = f"{c.run_dir}-{appended_value}"
+    
     # Print options.
     print()
     print('Training options:')
