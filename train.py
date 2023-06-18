@@ -49,10 +49,6 @@ def subprocess_fn(rank, c, temp_dir):
     training_loop.training_loop(rank=rank, **c)
 
 #----------------------------------------------------------------------------
-import os
-import re
-import dnnlib
-
 def launch_training(c, desc, outdir, dry_run):
     dnnlib.util.Logger(should_flush=True)
 
@@ -61,16 +57,7 @@ def launch_training(c, desc, outdir, dry_run):
     if os.path.isdir(outdir):
         prev_run_dirs = [x for x in os.listdir(outdir) if os.path.isdir(os.path.join(outdir, x))]
 
-    # Modify desc to double the last number
-    desc_parts = re.split('(\d+)$', desc)
-    if len(desc_parts) > 1:
-        last_number = int(desc_parts[-2])
-        new_last_number = last_number * 2
-        new_desc = "".join(desc_parts[:-2] + [str(new_last_number)])
-    else:
-        new_desc = desc
-
-    matching_dirs = [re.fullmatch(r'\d{5}' + f'-{new_desc}', x) for x in prev_run_dirs if re.fullmatch(r'\d{5}' + f'-{new_desc}', x) is not None]
+    matching_dirs = [re.fullmatch(r'\d{5}' + f'-{desc}', x) for x in prev_run_dirs if re.fullmatch(r'\d{5}' + f'-{desc}', x) is not None]
     if c.restart_every > 0 and len(matching_dirs) > 0:  # expect unique desc, continue in this directory
         assert len(matching_dirs) == 1, f'Multiple directories found for resuming: {matching_dirs}'
         c.run_dir = os.path.join(outdir, matching_dirs[0].group())
@@ -78,12 +65,8 @@ def launch_training(c, desc, outdir, dry_run):
         prev_run_ids = [re.match(r'^\d+', x) for x in prev_run_dirs]
         prev_run_ids = [int(x.group()) for x in prev_run_ids if x is not None]
         cur_run_id = max(prev_run_ids, default=-1) + 1
-        c.run_dir = os.path.join(outdir, f'{cur_run_id:05d}-{new_desc}')
+        c.run_dir = os.path.join(outdir, f'{cur_run_id:05d}-{desc}')
         assert not os.path.exists(c.run_dir)
-        
-        # Append 2^(index + 2) to c.run_dir
-        appended_value = 2 ** (cur_run_id + 2)
-        c.run_dir = f"{c.run_dir}-{appended_value}"
     
     # Print options.
     print()
