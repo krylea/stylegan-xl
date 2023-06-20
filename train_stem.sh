@@ -34,7 +34,7 @@ else
         --cbase 16384 --cmax 256 --resolution $RES" 
 fi
 
-if [ -z $ckpt ]
+if [ -n $ckpt ]
 then
     argstring="$argstring --resume $ckpt"
 fi
