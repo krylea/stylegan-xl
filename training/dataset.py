@@ -392,7 +392,7 @@ class ImageFolderDatasetWithPreprocessing(Dataset):
             else:
                 image = np.array(PIL.Image.open(f))
 
-        image = self._preprocess(image, raw_idx)
+        image = self._preprocess(image)
 
         if image.ndim == 2:
             image = image[:, :, np.newaxis] # HW => HWC
