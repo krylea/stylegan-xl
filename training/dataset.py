@@ -328,7 +328,7 @@ def make_transform(
 class ImageFolderDatasetWithPreprocessing(Dataset):
     def __init__(self,
         path,                   # Path to directory or zip.
-        resolution      = None, # Ensure specific resolution, None = highest available.
+        resolution,             # Ensure specific resolution, None = highest available.
         **super_kwargs,         # Additional arguments for the Dataset base class.
     ):
         self._path = path
@@ -399,15 +399,13 @@ class ImageFolderDatasetWithPreprocessing(Dataset):
         image = image.transpose(2, 0, 1) # HWC => CHW
         return image
     
-    def _preprocess(self, image, idx):
-        idx_str = f'{idx:08d}'
-        archive_fname = f'{idx_str[:5]}/img{idx_str}.png'
+    def _preprocess(self, image):
 
         transform = make_transform("center-crop", self._base_resolution, self._base_resolution)
         try:
             img = transform(image)
         except:
-            raise Exception("Image %d failed." % idx)
+            raise Exception("Image failed.")
             
 
         # Error check to require uniform image attributes across
@@ -430,7 +428,7 @@ class ImageFolderDatasetWithPreprocessing(Dataset):
                 raise Exception('Image width/height after scale and crop are required to be power-of-two')
         elif self.dataset_attrs != cur_image_attrs:
             err = [f'  dataset {k}/cur image {k}: {self.dataset_attrs[k]}/{cur_image_attrs[k]}' for k in self.dataset_attrs.keys()] # pylint: disable=unsubscriptable-object
-            raise Exception(f'Image {archive_fname} attributes must be equal across all images of the dataset.  Got:\n' + '\n'.join(err))
+            raise Exception(f'Image attributes must be equal across all images of the dataset.  Got:\n' + '\n'.join(err))
 
         return img
     
