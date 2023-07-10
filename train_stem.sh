@@ -16,11 +16,11 @@ ckpt=${3:-''}
 kimg=${4:-10000}
 desc=${5:-''}
 
-if [ -z $SLURM_CPUS_PER_GPU ]
+if [[ -z $SLURM_CPUS_PER_GPU ]]
 then
     SLURM_CPUS_PER_GPU=1
 fi
-if [ -z $SLURM_GPUS_ON_NODE ]
+if [[ -z $SLURM_GPUS_ON_NODE ]]
 then
     SLURM_GPUS_ON_NODE=1
 fi
@@ -45,12 +45,12 @@ else
         --cbase 16384 --cmax 256 --resolution $RES" 
 fi
 
-if [ -n $ckpt ]
+if [[ -n $ckpt ]]
 then
     argstring="$argstring --resume $ckpt"
 fi
 
-if [ -n $desc ]
+if [[ -n $desc ]]
 then
     argstring="$argstring --desc $desc"
 fi
