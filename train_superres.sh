@@ -48,7 +48,7 @@ else
             --path_stem training-runs/$DATASET_NAME/$PREFIX-stylegan3-t-${DATASET_NAME}${PREV_RES}/best_model.pkl"
 fi
 
-if [ -z $ckpt ]
+if [ -n $ckpt ]
 then
     argstring="$argstring --resume $ckpt"
 fi

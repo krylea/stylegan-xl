@@ -14,6 +14,7 @@ RES=$1
 DATASET_NAME=$2
 ckpt=${3:-''}
 kimg=${4:-10000}
+desc=${5:-''}
 
 if [ -z $SLURM_CPUS_PER_GPU ]
 then
@@ -26,10 +27,8 @@ fi
 
 BATCH=$((BATCH_PER_GPU * SLURM_GPUS_ON_NODE)) 
 GPUS=$SLURM_GPUS_ON_NODE
-#GPUS=1
 CPUS=$((SLURM_CPUS_PER_GPU * SLURM_GPUS_ON_NODE))
-#CPUS=1
-#BATCH=$BATCH_PER_GPU
+
 
 
 if [[ $DATASET_NAME == 'imagenet' ]]
@@ -46,10 +45,16 @@ else
         --cbase 16384 --cmax 256 --resolution $RES" 
 fi
 
-if [ -z $ckpt ]
+if [ -n $ckpt ]
 then
     argstring="$argstring --resume $ckpt"
 fi
+
+if [ -n $desc ]
+then
+    argstring="$argstring --desc $desc"
+fi
+
 
 python train.py $argstring
 

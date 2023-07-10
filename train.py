@@ -266,7 +266,8 @@ def main(**kwargs):
     # Description string.
     desc = f'{opts.cfg:s}-{opts.dataset_name:s}{opts.resolution:d}-gpus{c.num_gpus:d}-batch{c.batch_size:d}'
     if opts.desc is not None:
-        desc += f'-{opts.desc}'
+        desc=opts.desc
+        #desc += f'-{opts.desc}'
 
     ##################################
     ########## StyleGAN-XL ###########
