@@ -433,7 +433,7 @@ class ImageFolderDatasetWithPreprocessing(Dataset):
         return img
     
     def _load_raw_labels(self):
-        classnames = [x for x in os.listdir(self._path) if os.path.isdir(os.path.join(self._path,x))]
+        classnames = sorted([x for x in os.listdir(self._path) if os.path.isdir(os.path.join(self._path,x))])
         labeldict = {x: i for i,x in enumerate(classnames)}
         labels = [labeldict[fname.split('/')[0]] for fname in self._image_fnames]
         labels = np.array(labels)
