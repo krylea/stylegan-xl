@@ -433,15 +433,9 @@ class ImageFolderDatasetWithPreprocessing(Dataset):
         return img
     
     def _load_raw_labels(self):
-        fname = 'dataset.json'
-        if fname not in self._all_fnames:
-            return None
-        with self._open_file(fname) as f:
-            labels = json.load(f)['labels']
-        if labels is None:
-            return None
-        labels = dict(labels)
-        labels = [labels[fname.replace('\\', '/')] for fname in self._image_fnames]
+        classnames = [x for x in os.listdir(self._path) if os.path.isdir(x)]
+        labeldict = {x: i for i,x in enumerate(classnames)}
+        labels = [labeldict[fname.split('/')[0]] for fname in self._image_fnames]
         labels = np.array(labels)
         labels = labels.astype({1: np.int64, 2: np.float32}[labels.ndim])
         return labels
