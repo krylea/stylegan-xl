@@ -18,11 +18,11 @@ desc=${5:-''}
 
 if [[ -z $SLURM_CPUS_PER_GPU ]]
 then
-    SLURM_CPUS_PER_GPU=1
+    SLURM_CPUS_PER_GPU=2
 fi
 if [[ -z $SLURM_GPUS_ON_NODE ]]
 then
-    SLURM_GPUS_ON_NODE=1
+    SLURM_GPUS_ON_NODE=2
 fi
 
 BATCH=$((BATCH_PER_GPU * SLURM_GPUS_ON_NODE)) 

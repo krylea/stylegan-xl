@@ -16,12 +16,13 @@ DATASET_NAME=$3
 PREV_RES=$((RES / 2))
 ckpt=${4:-''}
 kimg=${5:-10000}
+desc=${6:-''}
 
-if [ -z $SLURM_CPUS_PER_GPU ]
+if [[ -z $SLURM_CPUS_PER_GPU ]]
 then
     SLURM_CPUS_PER_GPU=1
 fi
-if [ -z $SLURM_GPUS_ON_NODE ]
+if [[ -z $SLURM_GPUS_ON_NODE ]]
 then
     SLURM_GPUS_ON_NODE=1
 fi
@@ -38,7 +39,7 @@ then
             --gpus=$SLURM_GPUS_ON_NODE --batch=$BATCH --mirror=1 --snap 30 \
             --batch-gpu $BATCH_PER_GPU --kimg $kimg --syn_layers 10 --workers $CPUS \
             --superres --up_factor 2 --head_layers 7 --restart_every 36000 --resolution $RES \
-            --path_stem training-runs/$DATASET_NAME/$PREFIX-stylegan3-t-${DATASET_NAME}${PREV_RES}-gpus${GPUS}-batch${BATCH}/best_model.pkl"
+            --path_stem training-runs/$DATASET_NAME/$PREFIX-stylegan3-t-${DATASET_NAME}${PREV_RES}-gpus1-batch16/best_model.pkl"
 
 else
     argstring=" --outdir=./training-runs/$DATASET_NAME --cfg=stylegan3-t --data=./data/${DATASET_NAME}${RES}.zip --dataset_name $DATASET_NAME \
@@ -48,11 +49,15 @@ else
             --path_stem training-runs/$DATASET_NAME/$PREFIX-stylegan3-t-${DATASET_NAME}${PREV_RES}/best_model.pkl"
 fi
 
-if [ -n $ckpt ]
+if [[ -n $ckpt ]]
 then
     argstring="$argstring --resume $ckpt"
 fi
 
+if [[ -n $desc ]]
+then
+    argstring="$argstring --desc $desc"
+fi
 
 DONE=0
 while [ $DONE -eq 0 ]
