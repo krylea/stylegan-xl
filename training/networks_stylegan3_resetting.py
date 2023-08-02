@@ -624,8 +624,8 @@ class SuperresGenerator(torch.nn.Module):
         self.last_stopband_rel = G_stem.synthesis.last_stopband_rel
         self.num_critical = G_stem.synthesis.num_critical
         self.num_fp16_res = G_stem.synthesis.num_fp16_res
-        self.conv_kernel = G_stem.synthesis.conv_kernel
-        self.use_radial_filters = G_stem.synthesis.use_radial_filters
+        self.conv_kernel = getattr(G_stem.synthesis, 'conv_kernel', 3)
+        self.use_radial_filters = getattr(G_stem.synthesis, 'use_radial_filters', False)
 
         # cut off critically sampled layers
         for name in reversed(self.synthesis.layer_names):
