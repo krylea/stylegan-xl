@@ -31,7 +31,7 @@ GPUS=$SLURM_GPUS_ON_NODE
 CPUS=$((SLURM_CPUS_PER_GPU * SLURM_GPUS_ON_NODE))
 
 # additional environment variables for distributed training
-export WORLD_SIZE=$SLURM_NPROCS
+export WORLD_SIZE=8
 export RANK=$SLURM_PROCID
 export LOCAL_RANK=$SLURM_LOCALID
 export MASTER_ADDR=$(srun --ntasks=1 hostname 2>&1 | tail -n1)
