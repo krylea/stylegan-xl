@@ -2,8 +2,9 @@
 #SBATCH --job-name=stylegan-xl
 #SBATCH --output=logs/slurm-%j.txt
 #SBATCH --open-mode=append
-#SBATCH --ntasks=1
-#SBATCH --gres=gpu:4
+#SBATCH --nodes=1-2  # number of nodes
+#SBATCH --ntasks-per-node=1  # number of tasks per node
+#SBATCH --gres=gpu:4  # number of gpus per node
 #SBATCH --partition=a40
 #SBATCH --cpus-per-gpu=1
 #SBATCH --mem=100GB
