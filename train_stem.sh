@@ -2,7 +2,7 @@
 #SBATCH --job-name=stylegan-xl
 #SBATCH --output=logs/slurm-%j.txt
 #SBATCH --open-mode=append
-#SBATCH --nodes=2  # number of nodes
+#SBATCH --nodes=$6  # number of nodes
 #SBATCH --ntasks-per-node=1  # number of tasks per node
 #SBATCH --gres=gpu:4  # number of gpus per node
 #SBATCH --partition=a40
@@ -26,12 +26,12 @@ then
     SLURM_GPUS_ON_NODE=1
 fi
 
-BATCH=$((BATCH_PER_GPU * SLURM_GPUS_ON_NODE)) 
+BATCH=$((BATCH_PER_GPU * SLURM_GPUS_ON_NODE))
 GPUS=$SLURM_GPUS_ON_NODE
 CPUS=$((SLURM_CPUS_PER_GPU * SLURM_GPUS_ON_NODE))
 
 # additional environment variables for distributed training
-export WORLD_SIZE=8
+export WORLD_SIZE=$(($6 * $SLURM_GPUS_ON_NODE))
 export RANK=$SLURM_PROCID
 export LOCAL_RANK=$SLURM_LOCALID
 export MASTER_ADDR=$(srun --ntasks=1 hostname 2>&1 | tail -n1)
@@ -48,7 +48,7 @@ else
     argstring="--outdir=./training-runs/$DATASET_NAME --cfg=stylegan3-t --data=./data/${DATASET_NAME}${RES}.zip --dataset_name $DATASET_NAME \
         --gpus=$GPUS --batch=$BATCH --mirror=1 --snap 10 \
         --batch-gpu $BATCH_PER_GPU --kimg $kimg --syn_layers 7 --workers $CPUS \
-        --cbase 16384 --cmax 256 --resolution $RES" 
+        --cbase 16384 --cmax 256 --resolution $RES"
 fi
 
 if [[ -n $ckpt ]]
@@ -63,4 +63,5 @@ fi
 
 
 python train.py $argstring
+
 
