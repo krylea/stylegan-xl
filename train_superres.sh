@@ -18,6 +18,7 @@ PREV_RES=$((RES / 2))
 ckpt=${4:-''}
 kimg=${5:-10000}
 desc=${6:-''}
+MASTER_PORT=$7  # accept the master port as a user input
 
 if [[ -z $SLURM_CPUS_PER_GPU ]]
 then
@@ -32,7 +33,12 @@ BATCH=$((BATCH_PER_GPU * SLURM_GPUS_ON_NODE))
 GPUS=$SLURM_GPUS_ON_NODE
 CPUS=$((SLURM_CPUS_PER_GPU * SLURM_GPUS_ON_NODE))
 
-
+# additional environment variables for distributed training
+export WORLD_SIZE=$(($SLURM_JOB_NUM_NODES * $SLURM_GPUS_ON_NODE))
+export RANK=$SLURM_PROCID
+export LOCAL_RANK=$SLURM_LOCALID
+export MASTER_ADDR=$(srun --ntasks=1 hostname 2>&1 | tail -n1)
+export MASTER_PORT
 
 if [[ $DATASET_NAME == 'imagenet' ]]
 then
