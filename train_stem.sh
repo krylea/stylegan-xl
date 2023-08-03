@@ -16,6 +16,7 @@ DATASET_NAME=$2
 ckpt=${3:-''}
 kimg=${4:-10000}
 desc=${5:-''}
+MASTER_PORT=$6
 
 if [[ -z $SLURM_CPUS_PER_GPU ]]
 then
@@ -35,7 +36,7 @@ export WORLD_SIZE=$(($6 * $SLURM_GPUS_ON_NODE))
 export RANK=$SLURM_PROCID
 export LOCAL_RANK=$SLURM_LOCALID
 export MASTER_ADDR=$(srun --ntasks=1 hostname 2>&1 | tail -n1)
-export MASTER_PORT=12355
+export MASTER_PORT
 
 if [[ $DATASET_NAME == 'imagenet' ]]
 then
