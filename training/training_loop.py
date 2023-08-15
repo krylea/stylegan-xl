@@ -119,7 +119,7 @@ class TimingUtil():
     def start(self):
         self.start_time = time.time()
         self.end_time = None
-        self.t = self.start_t
+        self.t = self.start_time
         self.counter=0
 
     def end(self):
