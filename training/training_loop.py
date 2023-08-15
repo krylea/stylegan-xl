@@ -391,7 +391,7 @@ def training_loop(
         loss.pl_mean.copy_(__PL_MEAN__)
     timer = TimingUtil()
     while True:
-
+        timer.start()
         with torch.autograd.profiler.record_function('data_fetch'):
             phase_real_img, phase_real_c = next(training_set_iterator)
             phase_real_img = (phase_real_img.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
