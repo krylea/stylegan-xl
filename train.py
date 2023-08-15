@@ -16,6 +16,7 @@ import json
 import tempfile
 import torch
 import legacy
+import math
 
 import dnnlib
 from training import training_loop
@@ -30,7 +31,7 @@ def subprocess_fn(rank, c, temp_dir):
     dnnlib.util.Logger(file_name=os.path.join(c.run_dir, 'log.txt'), file_mode='a', should_flush=True)
     
     # additions
-    num_nodes = int(os.environ['WORLD_SIZE']) // 4
+    num_nodes = math.ceil(int(os.environ['WORLD_SIZE']) / 4)
     local_rank = rank
     global_rank = int(local_rank + int(os.environ['SLURM_PROCID']) * (c.num_gpus//num_nodes))
     local_gpus = c.num_gpus//num_nodes
