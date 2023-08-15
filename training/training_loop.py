@@ -117,6 +117,13 @@ class TimingUtil():
         self.counter=0
         self.cycles += 1
 
+    def reset(self):
+        self.events={}
+
+        self.t = None
+        self.counter=None
+        self.cycles=0
+
     def tick(self, event_name=None):
         t = time.time()
         if event_name is None:
@@ -464,6 +471,7 @@ def training_loop(
 
         if rank == 0:
             timer.report_times()
+            timer.reset()
 
         # Check for abort.
         if (not done) and (abort_fn is not None) and abort_fn():
