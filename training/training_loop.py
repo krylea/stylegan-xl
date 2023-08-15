@@ -101,6 +101,51 @@ def weight_reset(m):
 
 #----------------------------------------------------------------------------
 
+
+import time
+class TimingUtil():
+    def __init__(self):
+        self.event_list=[]
+        self.events={}
+
+        self.t = None
+        self.counter=None
+        self.cycles=0
+
+    def start(self):
+        self.t = time.time()
+        self.counter=0
+        self.cycles += 1
+
+    def tick(self, event_name=None):
+        t = time.time()
+        if event_name is None:
+            event_name = str(self.counter)
+        
+        if event_name not in self.events:
+            self.events[event_name] = {
+                'name': event_name,
+                'idx': self.counter,
+                't': []
+            }
+        
+        self.events[event_name]['t'].append(t - self.t)
+        self.t = t
+        self.counter += 1
+
+    def report_times(self):
+        for k, v in self.events.items():
+            t_avg = sum(v['t']) / len(v['t'])
+            self.events[k]['t_avg'] = t_avg
+        
+        print("Average Times over %d cycles:" % self.cycles)
+        for k, v in self.events.items():
+            print("\t%s: %f seconds." % (v['name'], v['t_avg']))
+
+
+
+#----------------------------------------------------------------------------
+
 # training_loop.py changes
 def training_loop(
     run_dir                 = '.',      # Output directory.
@@ -317,6 +362,7 @@ def training_loop(
         augment_pipe.p.copy_(augment_p)
     if hasattr(loss, 'pl_mean'):
         loss.pl_mean.copy_(__PL_MEAN__)
+    timer = TimingUtil()
     while True:
 
         with torch.autograd.profiler.record_function('data_fetch'):
@@ -329,6 +375,7 @@ def training_loop(
             all_gen_c = torch.from_numpy(np.stack(all_gen_c)).pin_memory().to(device)
             all_gen_c = [phase_gen_c.split(batch_gpu) for phase_gen_c in all_gen_c.split(batch_size)]
 
+        timer.tick("data")
         # Execute training phases.
         for phase, phase_gen_z, phase_gen_c in zip(phases, all_gen_z, all_gen_c):
             if batch_idx % phase.interval != 0:
@@ -365,6 +412,8 @@ def training_loop(
             # Phase done.
             if phase.end_event is not None:
                 phase.end_event.record(torch.cuda.current_stream(device))
+            
+            timer.tick(phase.name)
 
         # Update G_ema.
         with torch.autograd.profiler.record_function('Gema'):
@@ -386,6 +435,8 @@ def training_loop(
             ada_stats.update()
             adjust = np.sign(ada_stats['Loss/signs/real'] - ada_target) * (batch_size * ada_interval) / (ada_kimg * STEP_INTERVAL)
             augment_pipe.p.copy_((augment_pipe.p + adjust).max(misc.constant(0, device=device)))
+
+        timer.tick("updates")
 
         # Perform maintenance tasks once per tick.
         done = (cur_nimg >= total_kimg * STEP_INTERVAL)
@@ -410,6 +461,9 @@ def training_loop(
         training_stats.report0('Timing/total_days', (tick_end_time - start_time) / (24 * 60 * 60))
         if global_rank == 0:
             print(' '.join(fields))
+
+        if rank == 0:
+            timer.report_times()
 
         # Check for abort.
         if (not done) and (abort_fn is not None) and abort_fn():
