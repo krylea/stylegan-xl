@@ -453,6 +453,8 @@ class SynthesisBlock(torch.nn.Module):
             self.const = torch.nn.Parameter(torch.randn([out_channels, resolution, resolution]))
 
         if in_channels != 0:
+            if 'num_layers' in layer_kwargs:
+                del layer_kwargs['num_layers']
             self.conv0 = SynthesisLayer(in_channels, out_channels, w_dim=w_dim, resolution=resolution, up=2,
                 resample_filter=resample_filter, conv_clamp=conv_clamp, channels_last=self.channels_last, **layer_kwargs)
             self.num_conv += 1
