@@ -128,6 +128,7 @@ class TimingUtil():
         self.cycle_times.append(self.end_time - self.start_time)
 
     def reset(self):
+        self.event_list = []
         self.events={}
 
         self.t = None
@@ -389,9 +390,9 @@ def training_loop(
         augment_pipe.p.copy_(augment_p)
     if hasattr(loss, 'pl_mean'):
         loss.pl_mean.copy_(__PL_MEAN__)
-    timer = TimingUtil()
+    #timer = TimingUtil()
     while True:
-        timer.start()
+        #timer.start()
         with torch.autograd.profiler.record_function('data_fetch'):
             phase_real_img, phase_real_c = next(training_set_iterator)
             phase_real_img = (phase_real_img.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
@@ -402,7 +403,7 @@ def training_loop(
             all_gen_c = torch.from_numpy(np.stack(all_gen_c)).pin_memory().to(device)
             all_gen_c = [phase_gen_c.split(batch_gpu) for phase_gen_c in all_gen_c.split(batch_size)]
 
-        timer.tick("data")
+        #timer.tick("data")
         # Execute training phases.
         for phase, phase_gen_z, phase_gen_c in zip(phases, all_gen_z, all_gen_c):
             if batch_idx % phase.interval != 0:
@@ -440,7 +441,7 @@ def training_loop(
             if phase.end_event is not None:
                 phase.end_event.record(torch.cuda.current_stream(device))
             
-            timer.tick(phase.name)
+            #timer.tick(phase.name)
 
         # Update G_ema.
         with torch.autograd.profiler.record_function('Gema'):
@@ -463,8 +464,8 @@ def training_loop(
             adjust = np.sign(ada_stats['Loss/signs/real'] - ada_target) * (batch_size * ada_interval) / (ada_kimg * STEP_INTERVAL)
             augment_pipe.p.copy_((augment_pipe.p + adjust).max(misc.constant(0, device=device)))
 
-        timer.tick("updates")
-        timer.end()
+        #timer.tick("updates")
+        #timer.end()
 
         # Perform maintenance tasks once per tick.
         done = (cur_nimg >= total_kimg * STEP_INTERVAL)
@@ -491,8 +492,9 @@ def training_loop(
             print(' '.join(fields))
 
         if rank == 0:
-            timer.report_times()
-            timer.reset()
+            #timer.report_times()
+            #timer.reset()
+            pass
 
         # Check for abort.
         if (not done) and (abort_fn is not None) and abort_fn():

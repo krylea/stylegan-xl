@@ -25,6 +25,8 @@ from torch_utils import training_stats
 from torch_utils import custom_ops
 from torch_utils import misc
 
+from data_configs import DATASETS
+
 #----------------------------------------------------------------------------
 
 def subprocess_fn(rank, c, temp_dir):
@@ -120,12 +122,13 @@ def launch_training(c, desc, outdir, dry_run):
 
 #----------------------------------------------------------------------------
 
-def init_dataset_kwargs(data, resolution):
+def init_dataset_kwargs(dataset_name, resolution):
     try:
-        if 'imagenet' in data:
-            dataset_kwargs = dnnlib.EasyDict(class_name="training.dataset.ImageFolderDatasetWithPreprocessing", path=data, resolution=resolution, use_labels=True, max_size=None, xflip=False)
-        else:
-            dataset_kwargs = dnnlib.EasyDict(class_name="training.dataset.ImageFolderDataset", path=data, use_labels=True, max_size=None, xflip=False)
+        #if 'imagenet' in data:
+        #    dataset_kwargs = dnnlib.EasyDict(class_name="training.dataset.ImageFolderDatasetWithPreprocessing", path=data, resolution=resolution, use_labels=True, max_size=None, xflip=False)
+        #else:
+        #    dataset_kwargs = dnnlib.EasyDict(class_name="training.dataset.ImageFolderDataset", path=data, use_labels=True, max_size=None, xflip=False)
+        dataset_kwargs = dnnlib.EasyDict(**DATASETS[dataset_name], use_labels=True, max_size=None, xflip=False)
         dataset_obj = dnnlib.util.construct_class_by_name(**dataset_kwargs) # Subclass of training.dataset.Dataset.
         dataset_kwargs.resolution = dataset_obj.resolution # Be explicit about resolution.
         dataset_kwargs.use_labels = dataset_obj.has_labels # Be explicit about labels.
@@ -202,7 +205,7 @@ def main(**kwargs):
     c.data_loader_kwargs = dnnlib.EasyDict(pin_memory=True, prefetch_factor=2)
 
     # Training set.
-    c.training_set_kwargs, dataset_name = init_dataset_kwargs(data=opts.data, resolution=opts.resolution)
+    c.training_set_kwargs, dataset_name = init_dataset_kwargs(dataset_name=opts.dataset_name, resolution=opts.resolution)
     if opts.cond and not c.training_set_kwargs.use_labels:
         raise click.ClickException('--cond=True requires labels specified in dataset.json')
     c.training_set_kwargs.use_labels = opts.cond
