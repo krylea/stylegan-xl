@@ -2,7 +2,7 @@
 #SBATCH --job-name=stylegan-xl
 #SBATCH --output=logs/slurm-%j.txt
 #SBATCH --open-mode=append
-#SBATCH --nodes=1-2  # number of nodes
+#SBATCH --nodes=1  # number of nodes
 #SBATCH --ntasks-per-node=1  # number of tasks per node
 #SBATCH --gres=gpu:4  # number of gpus per node
 #SBATCH --partition=a40
@@ -16,7 +16,6 @@ DATASET_NAME=$2
 ckpt=${3:-''}
 kimg=${4:-10000}
 desc=${5:-''}
-MASTER_PORT=$6
 
 if [[ -z $SLURM_CPUS_PER_GPU ]]
 then
@@ -40,7 +39,7 @@ export WORLD_SIZE=$(($SLURM_JOB_NUM_NODES * $SLURM_GPUS_ON_NODE))
 export RANK=$SLURM_PROCID
 export LOCAL_RANK=$SLURM_LOCALID
 export MASTER_ADDR=$(srun --ntasks=1 hostname 2>&1 | tail -n1)
-export MASTER_PORT
+export MASTER_PORT="$(python -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1])')"
 
 if [[ $DATASET_NAME == 'imagenet' ]]
 then
