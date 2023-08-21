@@ -457,6 +457,9 @@ class SynthesisBlock(torch.nn.Module):
                 resample_filter=resample_filter, conv_clamp=conv_clamp, channels_last=self.channels_last, **layer_kwargs)
             self.num_conv += 1
 
+        if 'num_layers' in layer_kwargs:
+            del layer_kwargs['num_layers']
+            
         self.conv1 = SynthesisLayer(out_channels, out_channels, w_dim=w_dim, resolution=resolution,
             conv_clamp=conv_clamp, channels_last=self.channels_last, **layer_kwargs)
         self.num_conv += 1
