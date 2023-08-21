@@ -44,7 +44,6 @@ then
         --gpus=$GPUS --batch=$BATCH --mirror=1 --snap 30 \
         --batch-gpu $BATCH_PER_GPU --kimg $kimg --syn_layers 10 --workers $CPUS \
         --resolution $RES"
-
 else
     argstring="--outdir=./training-runs/$DATASET_NAME --cfg=stylegan3-t --data=./data/${DATASET_NAME}${RES}.zip --dataset_name $DATASET_NAME \
         --gpus=$GPUS --batch=$BATCH --mirror=1 --snap 10 \
