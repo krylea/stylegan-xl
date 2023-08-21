@@ -203,7 +203,6 @@ def main(**kwargs):
     c.G_opt_kwargs = dnnlib.EasyDict(class_name='torch.optim.Adam', betas=[0, 0.99], eps=1e-8)
     c.D_opt_kwargs = dnnlib.EasyDict(class_name='torch.optim.Adam', betas=[0, 0.99], eps=1e-8)
     c.data_loader_kwargs = dnnlib.EasyDict(pin_memory=True, prefetch_factor=2)
-
     # Training set.
     c.training_set_kwargs, dataset_name = init_dataset_kwargs(dataset_name=opts.dataset_name, resolution=opts.resolution)
     if opts.cond and not c.training_set_kwargs.use_labels:
