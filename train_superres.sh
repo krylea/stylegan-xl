@@ -44,7 +44,7 @@ export MASTER_PORT="$(python -c 'import socket; s=socket.socket(); s.bind(("", 0
 
 if [[ -n $desc ]]
 then
-    prev_run="training-runs/${DATASET_NAME}/${PREFIX}-${desc}/best_model.pkl"
+    prev_run="training-runs/${DATASET_NAME}/${PREFIX}-${desc}_${PREV_RES}/best_model.pkl"
 else
     prev_run="training-runs/$DATASET_NAME/$PREFIX-stylegan3-t-${DATASET_NAME}${PREV_RES}-gpus1-batch16/best_model.pkl"
 fi
