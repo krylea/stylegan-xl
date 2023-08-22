@@ -14,11 +14,13 @@ BATCH_PER_GPU=16
 PREFIX=$1
 RES=$2
 DATASET_NAME=$3
-PREV_RES=$((RES / 2))
 ckpt=${4:-''}
 kimg=${5:-10000}
 desc=${6:-''}
-MASTER_PORT=$7  # accept the master port as a user input
+up_factor=${7:-2}
+#MASTER_PORT=$7  # accept the master port as a user input
+
+PREV_RES=$((RES / up_factor))
 
 if [[ -z $SLURM_CPUS_PER_GPU ]]
 then
@@ -37,23 +39,29 @@ CPUS=$((SLURM_CPUS_PER_GPU * SLURM_GPUS_ON_NODE))
 export WORLD_SIZE=$(($SLURM_JOB_NUM_NODES * $SLURM_GPUS_ON_NODE))
 export RANK=$SLURM_PROCID
 export LOCAL_RANK=$SLURM_LOCALID
-export MASTER_ADDR=$(srun --ntasks=1 hostname 2>&1 | tail -n1)
-export MASTER_PORT
+export MASTER_ADDR="$(hostname -s)"
+export MASTER_PORT="$(python -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1])')"
+
+if [[ -n $desc ]]
+then
+    prev_run="training-runs/${DATASET_NAME}/${PREFIX}-${desc}/best_model.pkl"
+else
+    prev_run="training-runs/$DATASET_NAME/$PREFIX-stylegan3-t-${DATASET_NAME}${PREV_RES}-gpus1-batch16/best_model.pkl"
+fi
 
 if [[ $DATASET_NAME == 'imagenet' ]]
 then
     argstring="--outdir=./training-runs/$DATASET_NAME --cfg=stylegan3-t --data=/scratch/hdd001/datasets/imagenet/train --dataset_name $DATASET_NAME \
             --gpus=$SLURM_GPUS_ON_NODE --batch=$BATCH --mirror=1 --snap 30 \
             --batch-gpu $BATCH_PER_GPU --kimg $kimg --syn_layers 10 --workers $CPUS \
-            --superres --up_factor 2 --head_layers 7 --restart_every 36000 --resolution $RES \
-            --path_stem training-runs/$DATASET_NAME/$PREFIX-stylegan3-t-${DATASET_NAME}${PREV_RES}-gpus1-batch16/best_model.pkl"
-
+            --superres --up_factor $up_factor --head_layers 7 --restart_every 36000 --resolution $RES \
+            --path_stem $prev_run"
 else
     argstring=" --outdir=./training-runs/$DATASET_NAME --cfg=stylegan3-t --data=./data/${DATASET_NAME}${RES}.zip --dataset_name $DATASET_NAME \
             --gpus=$SLURM_GPUS_ON_NODE --batch=$BATCH --mirror=1 --snap 10 \
             --batch-gpu $BATCH_PER_GPU --kimg 10000 --syn_layers 7 --workers $CPUS \
-            --superres --up_factor 2 --head_layers 4 --cbase 16384 --cmax 256 --restart_every 36000 --resolution $RES \
-            --path_stem training-runs/$DATASET_NAME/$PREFIX-stylegan3-t-${DATASET_NAME}${PREV_RES}/best_model.pkl"
+            --superres --up_factor $up_factor --head_layers 4 --cbase 16384 --cmax 256 --restart_every 36000 --resolution $RES \
+            --path_stem $prev_run"
 fi
 
 if [[ -n $ckpt ]]
@@ -63,7 +71,7 @@ fi
 
 if [[ -n $desc ]]
 then
-    argstring="$argstring --desc $desc"
+    argstring="$argstring --desc ${desc}_${RES}"
 fi
 
 DONE=0

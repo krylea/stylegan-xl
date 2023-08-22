@@ -61,7 +61,7 @@ fi
 
 if [[ -n $desc ]]
 then
-    argstring="$argstring --desc $desc"
+    argstring="$argstring --desc ${desc}_${RES}"
 fi
 
 
