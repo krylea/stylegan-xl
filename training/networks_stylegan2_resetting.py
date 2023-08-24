@@ -157,7 +157,7 @@ class SuperresGenerator(torch.nn.Module):
             self.synthesis.num_ws += block.num_conv
             if is_last:
                 self.synthesis.num_ws += block.num_torgb
-            setattr(self, f'b{res}', block)
+            setattr(self.synthesis, f'b{res}', block)
         
         self.num_ws = self.synthesis.num_ws
         self.mapping.num_ws = self.synthesis.num_ws
