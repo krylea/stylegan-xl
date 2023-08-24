@@ -325,13 +325,21 @@ def main(**kwargs):
         assert opts.path_stem is not None, "When training superres head, provide path to stem"
 
         # Generator
-        c.G_kwargs = dnnlib.EasyDict(
-            class_name='training.networks_stylegan3_resetting.SuperresGenerator',
-            path_stem=opts.path_stem,
-            head_layers=opts.head_layers,
-            up_factor=opts.up_factor,
-        )
+        if opts.cfg == 'stylegan2':
+            c.G_kwargs = dnnlib.EasyDict(
+                class_name='training.networks_stylegan2_resetting.SuperresGenerator',
+                path_stem=opts.path_stem,
+                up_factor=opts.up_factor,
+            )
+        else:
+            c.G_kwargs = dnnlib.EasyDict(
+                class_name='training.networks_stylegan3_resetting.SuperresGenerator',
+                path_stem=opts.path_stem,
+                head_layers=opts.head_layers,
+                up_factor=opts.up_factor,
+            )
 
+        
         # Loss
         c.loss_kwargs.pl_weight = 0.0
         c.loss_kwargs.cls_weight = opts.cls_weight if opts.cond else 0
