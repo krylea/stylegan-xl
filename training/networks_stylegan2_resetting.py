@@ -158,6 +158,8 @@ class SuperresGenerator(torch.nn.Module):
             if is_last:
                 self.synthesis.num_ws += block.num_torgb
             setattr(self, f'b{res}', block)
+        
+        self.num_ws = self.synthesis.num_ws
 
     def reinit_stem(self):
         print("Reinitialize stem")
