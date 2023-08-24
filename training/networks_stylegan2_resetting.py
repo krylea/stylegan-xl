@@ -160,6 +160,7 @@ class SuperresGenerator(torch.nn.Module):
             setattr(self, f'b{res}', block)
         
         self.num_ws = self.synthesis.num_ws
+        self.mapping.num_ws = self.synthesis.num_ws
 
     def reinit_stem(self):
         print("Reinitialize stem")
