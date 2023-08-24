@@ -137,11 +137,10 @@ class SuperresGenerator(torch.nn.Module):
 
         fp16_resolution = max(2 ** (self.synthesis.img_resolution_log2 + 1 - self.synthesis.num_fp16_res), 8)
 
-        self.layer_names=[]
-        self.head_layer_names=[]
+        layer_names=[]
         for res in self.synthesis.block_resolutions:
             name = f'b{res}'
-            self.layer_names.append(name)
+            layer_names.append(name)
             block = getattr(self.synthesis, name)
             block.use_fp16 = (res >= fp16_resolution)
             if block.is_last:
@@ -152,6 +151,7 @@ class SuperresGenerator(torch.nn.Module):
         self.synthesis.block_resolutions = [2 ** i for i in range(2, self.synthesis.img_resolution_log2 + 1)]
         channels_dict = {res: min(channel_base // res, channel_max) for res in self.synthesis.block_resolutions}
 
+        self.head_layer_names=[]
         for res in self.synthesis.block_resolutions[-head_layers:]:
             in_channels = channels_dict[res // 2] if res > 4 else 0
             out_channels = channels_dict[res]
@@ -164,6 +164,7 @@ class SuperresGenerator(torch.nn.Module):
                 self.synthesis.num_ws += block.num_torgb
             setattr(self.synthesis, f'b{res}', block)
             self.head_layer_names.append(f'b{res}')
+        self.synthesis.layer_names = layer_names + self.head_layer_names
         
         self.num_ws = self.synthesis.num_ws
         self.mapping.num_ws = self.synthesis.num_ws
