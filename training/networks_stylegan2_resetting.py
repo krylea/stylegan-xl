@@ -153,7 +153,7 @@ class SuperresGenerator(torch.nn.Module):
             use_fp16 = (res >= fp16_resolution)
             is_last = (res == self.img_resolution)
             block = SynthesisBlock(in_channels, out_channels, w_dim=self.w_dim, resolution=res,
-                img_channels=self.synthesis.img_channels, is_last=is_last, use_fp16=use_fp16, **synthesis_kwargs)
+                img_channels=self.synthesis.img_channels, is_last=is_last, use_fp16=use_fp16)
             self.synthesis.num_ws += block.num_conv
             if is_last:
                 self.synthesis.num_ws += block.num_torgb
