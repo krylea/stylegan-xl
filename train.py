@@ -330,6 +330,8 @@ def main(**kwargs):
                 class_name='training.networks_stylegan2_resetting.SuperresGenerator',
                 path_stem=opts.path_stem,
                 up_factor=opts.up_factor,
+                channel_base=opts.cbase,
+                channel_max=opts.cmax
             )
         else:
             c.G_kwargs = dnnlib.EasyDict(
