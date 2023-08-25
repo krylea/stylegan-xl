@@ -113,7 +113,7 @@ def launch_training(c, desc, outdir, dry_run):
     # changes
     print('Launching processes...')
     torch.multiprocessing.set_start_method('spawn')
-    num_nodes = int(os.environ['WORLD_SIZE']) // 4
+    num_nodes = math.ceil(int(os.environ['WORLD_SIZE']) / 4)
     with tempfile.TemporaryDirectory() as temp_dir:
         if c.num_gpus == 1:
             subprocess_fn(rank=0, c=c, temp_dir=temp_dir)
