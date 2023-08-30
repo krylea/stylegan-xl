@@ -17,5 +17,13 @@ DATASETS={
     'flowers':{
         'path': "./data/flowers/train",
         'class_name':"training.dataset.ImageFolderDatasetWithPreprocessing"
+    },
+    'mini-imagenet':{
+        'path': "./data/mini-imagenet/train",
+        'class_name':"training.dataset.ImageFolderDatasetWithPreprocessing"
+    },
+    'cifar100':{
+        'path': "./data/cifar100/train",
+        'class_name':"training.dataset.ImageFolderDatasetWithPreprocessing"
     }
 }
