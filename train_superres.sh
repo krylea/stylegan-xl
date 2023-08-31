@@ -11,13 +11,12 @@
 
 BATCH_PER_GPU=16
 
-PREFIX=$1
-RES=$2
-DATASET_NAME=$3
+RES=$1
+DATASET_NAME=$2
+desc=$3
 ckpt=${4:-''}
 kimg=${5:-10000}
-desc=${6:-''}
-up_factor=${7:-2}
+up_factor=${6:-2}
 #MASTER_PORT=$7  # accept the master port as a user input
 
 PREV_RES=$((RES / up_factor))
@@ -46,12 +45,7 @@ export LOCAL_RANK=$SLURM_LOCALID
 export MASTER_ADDR="$(hostname -s)"
 export MASTER_PORT="$(python -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1])')"
 
-if [[ -n $desc ]]
-then
-    prev_run="training-runs/${DATASET_NAME}/${PREFIX}-${desc}_${PREV_RES}/best_model.pkl"
-else
-    prev_run="training-runs/$DATASET_NAME/$PREFIX-stylegan3-t-${DATASET_NAME}${PREV_RES}-gpus1-batch16/best_model.pkl"
-fi
+prev_run="training-runs/${DATASET_NAME}/${desc}_${PREV_RES}/best_model.pkl"
 
 if [[ $DATASET_NAME == 'imagenet' ]]
 then

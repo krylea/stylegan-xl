@@ -71,15 +71,12 @@ def launch_training(c, desc, outdir, dry_run):
     if os.path.isdir(outdir):
         prev_run_dirs = [x for x in os.listdir(outdir) if os.path.isdir(os.path.join(outdir, x))]
 
-    matching_dirs = [re.fullmatch(r'\d{5}' + f'-{desc}', x) for x in prev_run_dirs if re.fullmatch(r'\d{5}' + f'-{desc}', x) is not None]
+    matching_dirs = [re.fullmatch(desc, x) for x in prev_run_dirs if re.fullmatch(desc, x) is not None]
     if c.restart_every > 0 and len(matching_dirs) > 0:  # expect unique desc, continue in this directory
         assert len(matching_dirs) == 1, f'Multiple directories found for resuming: {matching_dirs}'
         c.run_dir = os.path.join(outdir, matching_dirs[0].group())
     else:                     # fallback to standard
-        prev_run_ids = [re.match(r'^\d+', x) for x in prev_run_dirs]
-        prev_run_ids = [int(x.group()) for x in prev_run_ids if x is not None]
-        cur_run_id = max(prev_run_ids, default=-1) + 1
-        c.run_dir = os.path.join(outdir, f'{cur_run_id:05d}-{desc}')
+        c.run_dir = os.path.join(outdir, desc)
         assert not os.path.exists(c.run_dir)
     
     # Print options.
