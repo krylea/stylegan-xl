@@ -16,6 +16,7 @@ DATASET_NAME=$2
 ckpt=${3:-''}
 kimg=${4:-10000}
 desc=${5:-''}
+lr=${6:-''}
 
 if [[ -z $SLURM_CPUS_PER_GPU ]]
 then
@@ -62,6 +63,11 @@ fi
 if [[ -n $desc ]]
 then
     argstring="$argstring --desc ${desc}_${RES}"
+fi
+
+if [[ -n $lr ]]
+then
+    argstring="$argstring --glr $lr --dlr $lr"
 fi
 
 
